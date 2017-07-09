@@ -27,6 +27,7 @@ type Entry struct {
 	Project   Project
 	ProjectID uint `gorm:"index;not null"`
 	TotalTime time.Duration
+	Archived  bool
 }
 
 // AllEntries queries the database for, and returns, all entries after scanning them into a slice.
@@ -50,6 +51,11 @@ func GetEntry(n string) Entry {
 // Delete one entry.
 func (e Entry) Delete() {
 	DB.Delete(&e)
+}
+
+// Archive one entry
+func (e Entry) Archive() {
+	// DB.Delete(&e)
 }
 
 // StartEntry queries the database for one entry by name.

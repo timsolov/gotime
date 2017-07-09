@@ -19,6 +19,7 @@ type Project struct {
 	Tasks       []Task
 	Entries     []Entry
 	TotalTime   time.Duration
+	Archived    bool
 }
 
 // AllProjects queries the database for, and returns, all projects
@@ -56,6 +57,15 @@ func (p Project) Delete() {
 		t.Delete()
 	}
 	DB.Delete(&p)
+}
+
+// Archive one project and its children.
+func (p Project) Archive() {
+	tasks := AllTasks(p)
+	for _, t := range tasks {
+		t.Archive()
+	}
+	// DB.Delete(&p)
 }
 
 // UpdateProject will update the project with values defined outside.

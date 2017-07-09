@@ -213,8 +213,6 @@ func selectItem(g *gocui.Gui, cv *gocui.View) error {
 
 // Get the name of the item at the cursor and delete it.
 // Disallow if there is no string at current cursor.
-// Hmm... I'm thinking that if two tasks have the same name it would randomly pick one.
-// Maybe not, but I forget how it sets the models.Current[Item]. Something to look out for.
 func deleteItem(g *gocui.Gui, v *gocui.View) error {
 	var err error
 	_, cy := v.Cursor()
@@ -273,6 +271,37 @@ func goBack(g *gocui.Gui, cv *gocui.View) error {
 	// Probably redundant.
 	nv.Highlight = true
 	return nil
+}
+
+func archiveItem(g *gocui.Gui, v *gocui.View) error {
+	var err error
+	_, cy := v.Cursor()
+	n, _ := v.Line(cy)
+	// If line at cursor is not empty (item is selected) then continue.
+	if n != "" {
+		switch v.Name() {
+		case P:
+			models.CurrentProject.Achive()
+			models.CurrentProject = models.Project{}
+			redrawProjects(g, v)
+			v.SetCursor(0, 0)
+			cursorUp(g, v)
+		case T:
+			models.CurrentTask.Achive()
+			models.CurrentTask = models.Task{}
+			redrawTasks(g, v)
+			v.SetCursor(0, 0)
+			cursorUp(g, v)
+
+		case E:
+			models.CurrentEntry.Achive()
+			models.CurrentEntry = models.Entry{}
+			redrawEntries(g, v)
+			v.SetCursor(0, 0)
+			cursorUp(g, v)
+		}
+	}
+	return err
 }
 
 // Get the view and redraw it with current database info.
@@ -367,6 +396,54 @@ func redrawEntries(g *gocui.Gui, v *gocui.View) {
 	redrawOutput(g, outputView)
 }
 
+// Get the view and redraw it with current database info.
+// The output view should not need to be redrawn while it is itself selected,
+// but we'll see...
+// v is always the output view.
+func redrawOutput(g *gocui.Gui, v *gocui.View) {
+	// Clear the view of content and redraw it with a fresh database query.
+	v.Clear()
+	if cv := g.CurrentView(); cv != nil {
+		// Projects
+		if cv.Name() == P {
+			h, m := models.CurrentProject.HoursMinutes()
+			if _, err := fmt.Fprintf(v, "%d Hours\n%d Minutes\n\n",
+				h, m); err != nil {
+				log.Println("Error writing project time to the output view:", err)
+			}
+			if _, err := fmt.Fprintf(v, models.CurrentProject.Description); err != nil {
+				log.Println("Error writing project description to the output view:", err)
+			}
+		}
+		if cv.Name() == T {
+			h, m := models.CurrentTask.HoursMinutes()
+			if _, err := fmt.Fprintf(v, "%d Hours\n%d Minutes\n\n",
+				h, m); err != nil {
+				log.Println("Error writing task time to the output view:", err)
+			}
+			if _, err := fmt.Fprintf(v, models.CurrentTask.Description); err != nil {
+				log.Println("Error writing task description to the output view:", err)
+			}
+		}
+		// Entries
+		if models.CurrentEntry.Start.IsZero() == false &&
+			cv.Name() == E {
+			details := models.CurrentEntry.Details
+			start := models.CurrentEntry.Start.Format(models.TL)
+			end := models.CurrentEntry.End.Format(models.TL)
+			hours, minutes := models.CurrentEntry.HoursMinutes()
+
+			if _, err := fmt.Fprintf(v, "%d Hours\n%d Minutes\nStart: %v\nEnd:   %v\n\n",
+				hours, minutes, start, end); err != nil {
+				log.Println("Error writing entry to the output view:", err)
+			}
+			if _, err := fmt.Fprintln(v, details); err != nil {
+				log.Println("Error writing entry to the output view:", err)
+			}
+		}
+	}
+}
+
 // Start a new entry.
 // This program does not use a timer, just timestamps.
 func newEntry(g *gocui.Gui, v *gocui.View) error {
@@ -426,54 +503,6 @@ func save(g *gocui.Gui, v *gocui.View) error {
 	}
 	dView = nil
 	return err
-}
-
-// Get the view and redraw it with current database info.
-// The output view should not need to be redrawn while it is itself selected,
-// but we'll see...
-// v is always the output view.
-func redrawOutput(g *gocui.Gui, v *gocui.View) {
-	// Clear the view of content and redraw it with a fresh database query.
-	v.Clear()
-	if cv := g.CurrentView(); cv != nil {
-		// Projects
-		if cv.Name() == P {
-			h, m := models.CurrentProject.HoursMinutes()
-			if _, err := fmt.Fprintf(v, "%d Hours\n%d Minutes\n\n",
-				h, m); err != nil {
-				log.Println("Error writing project time to the output view:", err)
-			}
-			if _, err := fmt.Fprintf(v, models.CurrentProject.Description); err != nil {
-				log.Println("Error writing project description to the output view:", err)
-			}
-		}
-		if cv.Name() == T {
-			h, m := models.CurrentTask.HoursMinutes()
-			if _, err := fmt.Fprintf(v, "%d Hours\n%d Minutes\n\n",
-				h, m); err != nil {
-				log.Println("Error writing task time to the output view:", err)
-			}
-			if _, err := fmt.Fprintf(v, models.CurrentTask.Description); err != nil {
-				log.Println("Error writing task description to the output view:", err)
-			}
-		}
-		// Entries
-		if models.CurrentEntry.Start.IsZero() == false &&
-			cv.Name() == E {
-			details := models.CurrentEntry.Details
-			start := models.CurrentEntry.Start.Format(models.TL)
-			end := models.CurrentEntry.End.Format(models.TL)
-			hours, minutes := models.CurrentEntry.HoursMinutes()
-
-			if _, err := fmt.Fprintf(v, "%d Hours\n%d Minutes\nStart: %v\nEnd:   %v\n\n",
-				hours, minutes, start, end); err != nil {
-				log.Println("Error writing entry to the output view:", err)
-			}
-			if _, err := fmt.Fprintln(v, details); err != nil {
-				log.Println("Error writing entry to the output view:", err)
-			}
-		}
-	}
 }
 
 // This adds a description for projects and tasks.

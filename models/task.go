@@ -20,6 +20,7 @@ type Task struct {
 	Project     Project
 	ProjectID   uint `gorm:"index;not null"`
 	TotalTime   time.Duration
+	Archived    bool
 }
 
 // AllTasks queries the database for, and returns, all tasks after scanning them into a slice.
@@ -56,6 +57,15 @@ func (t Task) Delete() {
 		e.Delete()
 	}
 	DB.Delete(&t)
+}
+
+// Archive one task and its children.
+func (t Task) Archive() {
+	entries := AllEntries(t)
+	for _, e := range entries {
+		e.Archive()
+	}
+	// DB.Delete(&t)
 }
 
 // HoursMinutes takes all entries for a task and returns its
