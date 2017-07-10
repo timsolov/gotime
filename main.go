@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 
 	"github.com/jroimartin/gocui"
 	"github.com/nanohard/gotime/models"
@@ -31,13 +30,23 @@ const (
 	E = "entries"
 	// O is string for output.
 	O = "output"
+	// Archive
+	// AP is string for projects.
+	AP = "archiveProjects"
+	// AT is string for tasks.
+	AT = "archiveTasks"
+	// AE is string for entries.
+	AE = "archiveEntries"
+	// AO is string for output.
+	AO = "archiveOutput"
 )
 
 func main() {
 	// Debug log
-	usr, _ := user.Current()
-	dir := usr.HomeDir
-	f, err := os.OpenFile(dir+"/.gotime.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// usr, _ := user.Current()
+	// dir := usr.HomeDir
+	// f, err := os.OpenFile(dir+"/.gotime.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(".gotime.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Println("file no existy")
 	}
@@ -163,6 +172,7 @@ func main() {
 		inputView(g, projectView)
 	}
 	// Start the main loop.
-	err = g.MainLoop()
-	log.Println("Main loop has finished:", err)
+	if err = g.MainLoop(); err != nil {
+		log.Println("Main loop has finished:", err)
+	}
 }

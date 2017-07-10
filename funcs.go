@@ -281,20 +281,20 @@ func archiveItem(g *gocui.Gui, v *gocui.View) error {
 	if n != "" {
 		switch v.Name() {
 		case P:
-			models.CurrentProject.Achive()
+			models.CurrentProject.Archive()
 			models.CurrentProject = models.Project{}
 			redrawProjects(g, v)
 			v.SetCursor(0, 0)
 			cursorUp(g, v)
 		case T:
-			models.CurrentTask.Achive()
+			models.CurrentTask.Archive()
 			models.CurrentTask = models.Task{}
 			redrawTasks(g, v)
 			v.SetCursor(0, 0)
 			cursorUp(g, v)
 
 		case E:
-			models.CurrentEntry.Achive()
+			models.CurrentEntry.Archive()
 			models.CurrentEntry = models.Entry{}
 			redrawEntries(g, v)
 			v.SetCursor(0, 0)
@@ -553,9 +553,43 @@ func layout(g *gocui.Gui) error {
 		return errors.Wrap(err, "Cannot update entries view")
 	}
 	// Output
-	_, err = g.SetView("output", ewidth+1, 0, tw-1, th-1)
+	_, err = g.SetView(O, ewidth+1, 0, tw-1, th-1)
 	if err != nil {
 		return errors.Wrap(err, "Cannot update output view")
+	}
+	// Status
+	// Not used right now. If uncommented set all above SetView() y1 values to 'th-4'.
+	// _, err = g.SetView("status", 0, th-sheight, tw-1, th-1)
+	// if err != nil {
+	// 	return errors.Wrap(err, "Cannot update input view.")
+	// }
+	return nil
+}
+
+// The layout handler calculates all sizes depending on the current terminal size.
+func archiveLayout(g *gocui.Gui) error {
+	// Get the current terminal size.
+	tw, th := g.Size()
+	// Update the views according to the new terminal size.
+	// Projects.
+	_, err := g.SetView(AP, 0, 0, pwidth, th-1)
+	if err != nil {
+		return errors.Wrap(err, "Cannot update archiveProjects view")
+	}
+	// Tasks
+	_, err = g.SetView(AT, pwidth+1, 0, twidth, th-1)
+	if err != nil {
+		return errors.Wrap(err, "Cannot update archiveTasks view")
+	}
+	// Entries
+	_, err = g.SetView(AE, twidth+1, 0, ewidth, th-1)
+	if err != nil {
+		return errors.Wrap(err, "Cannot update archiveEntries view")
+	}
+	// Output
+	_, err = g.SetView(AO, ewidth+1, 0, tw-1, th-1)
+	if err != nil {
+		return errors.Wrap(err, "Cannot update archiveOutput view")
 	}
 	// Status
 	// Not used right now. If uncommented set all above SetView() y1 values to 'th-4'.
