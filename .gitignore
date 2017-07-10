@@ -21,3 +21,6 @@ release/
 # Log
 log
 *.log
+
+vendor/
+!vendor/vendor.json
