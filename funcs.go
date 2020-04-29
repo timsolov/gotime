@@ -171,8 +171,44 @@ func inputView(g *gocui.Gui, cv *gocui.View) error {
 		if err := g.SetKeybinding(name, gocui.KeyEnter, gocui.ModNone, copyInput); err != nil {
 			return err
 		}
+		if err := g.SetKeybinding(name, gocui.KeyEsc, gocui.ModNone, quitInput); err != nil {
+			return err
+		}
+
 	}
 	return nil
+}
+
+func quitInput(g *gocui.Gui, iv *gocui.View) error {
+	var err error
+	// Get the output view via its name.
+	var ov *gocui.View
+	// If there is text input then add the item,
+	// else go back to the input view.
+	switch iv.Name() {
+	case "addProject":
+		ov, _ = g.View(P)
+	case "addTask":
+		ov, _ = g.View(T)
+	}
+	// !!!
+	// Must delete keybindings before the view, or fatal error !!!
+	// !!!
+	g.DeleteKeybindings(iv.Name())
+	if err = g.DeleteView(iv.Name()); err != nil {
+		return err
+	}
+	// Set the view back.
+	if _, err = g.SetCurrentView(ov.Name()); err != nil {
+		return err
+	}
+	switch ov.Name() {
+	case P:
+		redrawProjects(g, ov)
+	case T:
+		redrawTasks(g, ov)
+	}
+	return err
 }
 
 // Get the current view (cv) and transfer cursor to the new view (nv).
